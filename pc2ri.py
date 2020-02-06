@@ -42,7 +42,6 @@ def lidar_to_2d_front_view_3(points, v_res=26.9/64,
 	x_img[x_lidar < 0] = 0  # 
 	# 
 
-
 	# -52~10  -0.4137~0.078
 	y_img_2 = -np.arctan2(z_lidar, r_lidar) #
 	# 
@@ -93,7 +92,7 @@ def load_velodyne_binary(velodyne_bin_path):
     if not os.path.isfile(velodyne_bin_path):
         raise FileNotFoundError("Could not find velodyne bin example: {}".format(velodyne_bin_path))
     data = np.fromfile(velodyne_bin_path, dtype=np.float32)
-    #ptcld = data.reshape((4, -1))
+    ptcld = data.reshape(-1,4)
     ptcld = np.transpose(ptcld)
     return ptcld
 
@@ -104,15 +103,10 @@ def load_velodyne_txt(velodyne_txt_path):
     if not os.path.isfile(velodyne_txt_path):
         raise FileNotFoundError("Could not find velodyne bin example: {}".format(velodyne_txt_path))
 
-    #data = np.loadtxt(velodyne_txt_path, dtype=float, delimiter=' ')
     ptcld = pd.read_csv(velodyne_txt_path,sep=' ')
-    print(ptcld)
     ptcld = ptcld.to_numpy()
     print(ptcld.shape)
     ptcld = np.transpose(ptcld)
-    print(ptcld)
-    
-    
     return ptcld
 
 
@@ -127,11 +121,9 @@ def pc2ri_pw(pc, v_FOV_degrees = 26.9, v_beams=64.0, h_res = 0.08):
 	range_image = np.zeros([int(v_beams),int(horizontal_grids),5])
 	counter = 0
 	#print("*********** ",pc)
-	mini_pc = np.zeros(pc.shape)
+	#mini_pc = np.zeros(pc.shape)
 	for index in range (pc.shape[1]):
-		
 		point = pc[:,index]
-		mini_pc[:,index] = point
 
 		x = point[0]
 		y = point[1]
@@ -182,40 +174,24 @@ def pc2ri_pw(pc, v_FOV_degrees = 26.9, v_beams=64.0, h_res = 0.08):
 
 				range_image[r_index,c_index,0:4] =  point
 				range_image[r_index,c_index,4] =  d
-	#print(mini_pc)
-	#print("counter",counter)
-	now = datetime.now()
-	current_time = now.strftime("%H:%M:%S")
-	#np.savetxt(current_time + '_mini_pc.txt', np.float32(np.transpose(mini_pc)),fmt='%1.6e')
 	return range_image
 
 
 if __name__ == "__main__":
 	#pc = load_velodyne_binary("./2011_09_26_drive_0001_sync/2011_09_26/2011_09_26_drive_0001_sync/velodyne_points/data/0000000000.bin")
-	pc = load_velodyne_txt("/home/daniel/Documents/pointCloud_RangeImage/2011_09_26_drive_0048_extract_city/2011_09_26/2011_09_26_drive_0048_extract/velodyne_points/data/0000000000.txt")
+	pc = load_velodyne_binary("/home/daniel/Documents/pointCloud_RangeImage/2011_09_26_drive_0001_sync/2011_09_26/2011_09_26_drive_0001_sync/velodyne_points/data/0000000000.bin")
+	#pc = load_velodyne_txt("/home/daniel/Documents/pointCloud_RangeImage/2011_09_26_drive_0048_extract_city/2011_09_26/2011_09_26_drive_0048_extract/velodyne_points/data/0000000000.txt")
 	now = datetime.now()
 	current_time = now.strftime("%H:%M:%S")
-	np.savetxt(current_time + '_mini_pc.txt', np.float32(np.transpose(pc)),fmt='%1.6e')
-	#np.save("/home/daniel/Documents/pointCloud_RangeImage/2011_09_26_drive_0001_sync/2011_09_26/2011_09_26_drive_0001_sync/velodyne_points/test0000000.npy",pc)
+	#np.savetxt(current_time + '_mini_pc.txt', np.float32(np.transpose(pc)),fmt='%1.6e')	
 	
-	"""
 	compare_pc = np.load("/home/daniel/Documents/lidar_2d/2011_09_26_0001_0000000010.npy")
-	
-	print("*********** ")
-	print(compare_pc.shape)
-	print("*********** ")
+
 	#ri = pc2ri(pc)
 	image = np.uint8(255*compare_pc[:,:,4]/np.max(compare_pc[:,:,4]))
 	compare_pc_colors = cv2.applyColorMap(image, cv2.COLORMAP_JET)
 	cv2.imshow('ground_truth',compare_pc_colors )
-
-	result = lidar_to_2d_front_view_3(pc)
-	print(result.shape)
-	cv2.imshow('image', result[:,:,4])
-	c = cv2.waitKey(0)
-	if 'q' == chr(c & 255):
-		print("finish")
-	"""
+	
 	ri = pc2ri_pw(pc)
 	color_image = np.uint8(255*ri[:,:,4]/np.max(ri[:,:,4]))
 	color_image = cv2.applyColorMap(color_image, cv2.COLORMAP_JET)
