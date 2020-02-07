@@ -114,72 +114,69 @@ def pc2ri_pw(pc, v_FOV_degrees = 26.9, v_beams=64.0, h_res = 0.08):
 	"""
 	HDL-64E parameters by default
 	"""
+	#vertical parameters
+	#v_FOV_degrees = np.array([-v_FOV_degrees/2,v_FOV_degrees/2])
+	v_FOV_degrees = np.array([-23.9,3])
+	v_res = (v_FOV_degrees[1]-v_FOV_degrees[0])/v_beams
+	#horizontal parameters
+	#h_res = 0.17578125
 	horizontal_grids = 512.0
-	field_of_view_horizontal = 90
-	h_res = field_of_view_horizontal/horizontal_grids
-	v_res = v_FOV_degrees/v_beams
+	h_FOV_degrees = np.array([45,135]) #degrees
+	h_res = (h_FOV_degrees[1]-h_FOV_degrees[0])/horizontal_grids
+	
 	range_image = np.zeros([int(v_beams),int(horizontal_grids),5])
 	counter = 0
 	#print("*********** ",pc)
-	#mini_pc = np.zeros(pc.shape)
+
 	for index in range (pc.shape[1]):
 		point = pc[:,index]
 
 		x = point[0]
 		y = point[1]
-		z = -point[2]
+		z = point[2]
+				
+		d = np.sqrt((x ** 2) + (y ** 2) + (z ** 2))
+		#print(point , "d =" ,d)
 		
 
-		"""
-		x = 14.57 #float(point[0])
-		y = -2.15 #float(point[1])
-		z = -0.88 #float(point[2])
-		"""
-		
-		if (x>0.01): #delimit for -90 to 90 degrees
-			v_res = v_FOV_degrees/v_beams
+		angle_vertical = np.rad2deg((np.arcsin(z / d)))
+		#print("angle vertical",angle_vertical)
+		#angle_vertical = angle_vertical/0.08
+		angle_azimuth = np.rad2deg(np.arctan2(x,y)) #azimuth
+		#angle_azimuth = np.rad2deg(np.arcsin(x/np.sqrt(x**2+y**2))) #azimuth
+		#print("angle azimuth RAD",np.arctan2(x,y))
+		#print("angle azimuth",angle_azimuth)
+		#angle_azimuth = angle_azimuth/v_res
+
+		#print("angle rows",angle_azimuth)
+
+		if(h_FOV_degrees[0]<angle_azimuth and h_FOV_degrees[1]>angle_azimuth and (v_FOV_degrees[0])<angle_vertical and (v_FOV_degrees[1])>angle_vertical):
+
 			
-			d = np.sqrt((x ** 2) + (y ** 2) + (z ** 2))
-			#print(point , "d =" ,d)
+			#print("******************** Inside")
+			#print("angle_vertical",angle_vertical)
+			r_index = np.floor((angle_vertical+(-v_FOV_degrees[0])) / v_res).astype(int)
+			if (r_index > 63):
+				r_index = 63
+			#print(" v_res", v_res)
+			#print("r_index",r_index)
+			c_index = np.floor((angle_azimuth-h_FOV_degrees[0]) / h_res).astype(int)
+			#print("c_index",c_index)
+			if (c_index > 511):
+				c_index = 511
+			#print("debug",h_res)
 			
+			#print("c_index",c_index)
 
-			angle_vertical = np.rad2deg((np.arcsin(z / d)))
-			#print("angle vertical",angle_vertical)
-			#angle_vertical = angle_vertical/0.08
-			angle_azimuth = np.rad2deg(np.arctan2(x,y)) #azimuth
-			#angle_azimuth = np.rad2deg(np.arcsin(x/np.sqrt(x**2+y**2))) #azimuth
-			#print("angle azimuth RAD",np.arctan2(x,y))
-			#print("angle azimuth",angle_azimuth)
-			#angle_azimuth = angle_azimuth/v_res
-
-			#print("angle rows",angle_azimuth)
-
-			if(45<angle_azimuth and 135>angle_azimuth and (-v_FOV_degrees/2)<angle_vertical and (v_FOV_degrees/2)>angle_vertical):
-
-				
-				#print("******************** Inside")
-				#print("angle_vertical",angle_vertical)
-				r_index = np.floor((angle_vertical+(v_FOV_degrees/2)) / v_res).astype(int)
-				if (r_index > 63):
-					r_index = 63
-				#print(" v_res", v_res)
-				#print("r_index",r_index)
-				c_index = np.floor((angle_azimuth-45) / h_res).astype(int)
-				#print("c_index",c_index)
-				if (c_index > 511):
-					c_index = 511
-				#print("debug",h_res)
-				
-				#print("c_index",c_index)
-
-				range_image[r_index,c_index,0:4] =  point
-				range_image[r_index,c_index,4] =  d
+			range_image[r_index,c_index,0:4] =  point
+			range_image[r_index,c_index,4] =  d
+	range_image = np.flip(range_image,0)
 	return range_image
 
 
 if __name__ == "__main__":
 	#pc = load_velodyne_binary("./2011_09_26_drive_0001_sync/2011_09_26/2011_09_26_drive_0001_sync/velodyne_points/data/0000000000.bin")
-	pc = load_velodyne_binary("/home/daniel/Documents/pointCloud_RangeImage/2011_09_26_drive_0001_sync/2011_09_26/2011_09_26_drive_0001_sync/velodyne_points/data/0000000000.bin")
+	pc = load_velodyne_binary("/home/daniel/Documents/pointCloud_RangeImage/2011_09_26_drive_0001_sync/2011_09_26/2011_09_26_drive_0001_sync/velodyne_points/data/0000000010.bin")
 	#pc = load_velodyne_txt("/home/daniel/Documents/pointCloud_RangeImage/2011_09_26_drive_0048_extract_city/2011_09_26/2011_09_26_drive_0048_extract/velodyne_points/data/0000000000.txt")
 	now = datetime.now()
 	current_time = now.strftime("%H:%M:%S")
