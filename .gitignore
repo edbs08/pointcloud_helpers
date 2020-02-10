@@ -3,3 +3,5 @@
 # But not these files...
 !.gitignore
 !pc2ri.py
+!generate_dataset.py
+!visual_data.py
