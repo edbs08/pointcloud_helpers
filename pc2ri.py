@@ -102,10 +102,19 @@ def load_velodyne_binary_labels(velodyne_bin_path, labels_path):
 
 	# if all goes well, open label
 	label = np.fromfile(labels_path, dtype=np.uint32)
-	label = label.reshape(-1)
-	print(label)
+	label_ID = label >> 16    # instance id in upper half
+	label= label & 0xFFFF #Following SemanticKITTI example (laser_scan.py ln:247)
+	
+	label = label.reshape(1,-1)
+	np.set_printoptions(edgeitems=15)
+	label = map_labels(label)
+	print(label_ID)
+	#ptcld = np.array([[ptcld],[labels_path]])
+	#ptcld = np.concatenate((ptcld,label),axis = 0)
+	return ptcld,label
 
-	return ptcld
+def map_labels(label):
+	return
 
 
 def load_velodyne_binary(velodyne_bin_path):
@@ -142,6 +151,51 @@ def load_velodyne_txt(velodyne_txt_path):
     ptcld = np.transpose(ptcld)
     return ptcld
 
+def pc2ri_pw_360(pc, v_FOV_degrees = 26.9, v_beams=64.0, h_res = 0.08):
+	"""
+	HDL-64E parameters by default
+	"""
+	#vertical parameters
+	#v_FOV_degrees = np.array([-v_FOV_degrees/2,v_FOV_degrees/2])
+	v_FOV_degrees = np.array([-23.9,3])
+	v_res = (v_FOV_degrees[1]-v_FOV_degrees[0])/v_beams
+	#horizontal parameters
+	#h_res = 0.17578125
+	horizontal_grids = 1024.0
+	h_FOV_degrees = np.array([-180,180]) #degrees
+	h_res = (h_FOV_degrees[1]-h_FOV_degrees[0])/horizontal_grids
+	
+	range_image = np.zeros([int(v_beams),int(horizontal_grids),5])
+	counter = 0
+
+	x = pc[0,:]
+	y = pc[1,:]
+	z = pc[2,:]
+	d = np.sqrt((x ** 2) + (y ** 2) + (z ** 2))
+	angle_vertical = np.rad2deg((np.arcsin(z / d)))
+	angle_azimuth = np.rad2deg(np.arctan2(x,y)) 
+
+	print(pc.shape[1])
+	for index in range (pc.shape[1]):
+		point = pc[:,index]
+
+		if(h_FOV_degrees[0]<angle_azimuth[index] and h_FOV_degrees[1]>angle_azimuth[index] and (v_FOV_degrees[0])<angle_vertical[index] and (v_FOV_degrees[1])>angle_vertical[index]):
+
+			r_index = np.round((angle_vertical[index]+(-v_FOV_degrees[0])) / v_res).astype(int)
+			if (r_index > int(v_beams-1)):
+				r_index = int(v_beams-1)
+
+			c_index = np.round((angle_azimuth[index]-h_FOV_degrees[0]) / h_res).astype(int)
+			if (c_index > (horizontal_grids-1)):
+				c_index = int(horizontal_grids-1)
+
+			if (range_image[r_index,c_index,4]!=0):
+				counter += 1
+			range_image[r_index,c_index,0:4] =  point
+			range_image[r_index,c_index,4] =  d[index]
+	range_image = np.flip(range_image,0)
+	print(counter)
+	return range_image   
 
 def pc2ri_pw(pc, v_FOV_degrees = 26.9, v_beams=64.0, h_res = 0.08):
 	"""
@@ -191,6 +245,7 @@ def pc2ri_pw(pc, v_FOV_degrees = 26.9, v_beams=64.0, h_res = 0.08):
 
 if __name__ == "__main__":
 	
+	"""
 	#pc = load_velodyne_binary("./2011_09_26_drive_0001_sync/2011_09_26/2011_09_26_drive_0001_sync/velodyne_points/data/0000000000.bin")
 	pc_path = "/home/daniel/Documents/pointCloud_RangeImage/2011_09_26_drive_0001_sync/2011_09_26/2011_09_26_drive_0001_sync/velodyne_points/data/0000000010.bin"
 	pc = load_velodyne_binary(pc_path)
@@ -200,7 +255,7 @@ if __name__ == "__main__":
 	current_time = now.strftime("%H:%M:%S")
 	#np.savetxt(current_time + '_mini_pc.txt', np.float32(np.transpose(pc)),fmt='%1.6e')	
 	
-	compare_pc = np.load("/home/daniel/Documents/lidar_2d/2011_09_26_0001_0000000010.npy")
+	compare_pc = np.load("/home/daniel/Documents/LU_Net_Original/lidar_2d/2011_09_26_0001_0000000010.npy")
 
 	#ri = pc2ri(pc)
 	image = np.uint8(255*compare_pc[:,:,4]/np.max(compare_pc[:,:,4]))
@@ -211,9 +266,26 @@ if __name__ == "__main__":
 	color_image = np.uint8(255*ri[:,:,4]/np.max(ri[:,:,4]))
 	color_image = cv2.applyColorMap(color_image, cv2.COLORMAP_JET)
 	cv2.imshow('my_version', color_image)
-	#cv2.imwrite("GTcolor_image.png",compare_pc_colors)
-	#cv2.imwrite("color_image.png",color_image)
+	cv2.imwrite("GTcolor_image.png",compare_pc_colors)
+	cv2.imwrite("color_image.png",color_image)
 	c = cv2.waitKey(0)
 	if 'q' == chr(c & 255):
 		print("finish")
+	"""
+
+
 	
+
+	pc_path = "/home/daniel/Documents/pointCloud_RangeImage/2011_09_26_drive_0001_sync/2011_09_26/2011_09_26_drive_0001_sync/velodyne_points/data/0000000010.bin"
+	pc = load_velodyne_binary(pc_path)
+	label_path = "/home/daniel/Documents/SemanticKITTI/data_odometry_labels/dataset/sequences/00/labels/000010.label" 
+
+	load_velodyne_binary_labels(pc_path,label_path)
+
+	ri = pc2ri_pw_360(pc)
+	color_image = np.uint8(255*ri[:,:,4]/np.max(ri[:,:,4]))
+	color_image = cv2.applyColorMap(color_image, cv2.COLORMAP_JET)
+	cv2.imshow('my_version', color_image)
+	c = cv2.waitKey(0)
+	if 'q' == chr(c & 255):
+		print("finish")

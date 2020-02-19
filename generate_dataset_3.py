@@ -5,6 +5,48 @@ import time
 from datetime import datetime
 import pandas as pd
 
+"""
+*******************************************************
+This file generates a dataset using the mapping provided by Semantic KITTI to reduce the number of classes to 19
+*******************************************************
+"""
+learning_map= {
+  0 : 0,     # "unlabeled"
+  1 : 0,     # "outlier" mapped to "unlabeled" --------------------------mapped
+  10: 1,     # "car"
+  11: 2,     # "bicycle"
+  13: 5,     # "bus" mapped to "other-vehicle" --------------------------mapped
+  15: 3,     # "motorcycle"
+  16: 5,     # "on-rails" mapped to "other-vehicle" ---------------------mapped
+  18: 4,     # "truck"
+  20: 5,     # "other-vehicle"
+  30: 6,     # "person"
+  31: 7,     # "bicyclist"
+  32: 8,     # "motorcyclist"
+  40: 9,     # "road"
+  44: 10,    # "parking"
+  48: 11,   # "sidewalk"
+  49: 12,    # "other-ground"
+  50: 13,   # "building"
+  51: 14,    # "fence"
+  52: 0,     # "other-structure" mapped to "unlabeled" ------------------mapped
+  60: 9,     # "lane-marking" to "road" ---------------------------------mapped
+  70: 15,    # "vegetation"
+  71: 16,    # "trunk"
+  72: 17,    # "terrain"
+  80: 18,    # "pole"
+  81: 19,    # "traffic-sign"
+  99: 0,     # "other-object" to "unlabeled" ----------------------------mapped
+  252: 1,    # "moving-car" to "car" ------------------------------------mapped
+  253: 7,    # "moving-bicyclist" to "bicyclist" ------------------------mapped
+  254: 6,    # "moving-person" to "person" ------------------------------mapped
+  255: 8,    # "moving-motorcyclist" to "motorcyclist" ------------------mapped
+  256: 5,    # "moving-on-rails" mapped to "other-vehicle" --------------mapped
+  257: 5,    # "moving-bus" mapped to "other-vehicle" -------------------mapped
+  258: 4,    # "moving-truck" to "truck" --------------------------------mapped
+  259: 5,    # "moving-other"-vehicle to "other-vehicle" ----------------mapped
+}
+
 def load_velodyne_binary_labels(velodyne_bin_path, labels_path):
 	"""Decode a binary Velodyne example (of the form '<timestamp>.bin') **** From Oxfort Robot Car
 	Args:
@@ -37,12 +79,19 @@ def load_velodyne_binary_labels(velodyne_bin_path, labels_path):
 	label= label & 0xFFFF #Following SemanticKITTI example (laser_scan.py ln:247)
 	label = label.reshape(1,-1)
 
+	label = map_labels(label)
 	#ptcld = np.array([[ptcld],[labels_path]])
 	#ptcld = np.concatenate((ptcld,label),axis = 0)
 	return ptcld,label
 
-def cluster_labels(label):
-	return
+def  map_labels(label):
+	new_label = np.zeros(label.shape)
+
+	for i in range (label.shape[1]):
+		#print(label[0,i])
+		new_label[0,i] = learning_map[label[0,i]]
+	return new_label
+
 
 
 
@@ -98,7 +147,7 @@ def pc2ri_pw(pc,label):
 
 
 if __name__ == "__main__":
-	save_path = "/home/daniel/Documents/Generated_Datasets/All_labels/"
+	save_path = "/home/daniel/Documents/Generated_Datasets/All_Maped_labels/"
 	file_name = save_path+"MyFile.txt"
 	file1 = open(file_name,"w")
 
@@ -122,8 +171,8 @@ if __name__ == "__main__":
 				break
 
 			print("Starting processing sequence ", seq, " file " , file)
-			#ptcld,label = load_velodyne_binary_labels(pc_path,label_path)
-			#ri = pc2ri_pw(ptcld,label)
+			ptcld,label = load_velodyne_binary_labels(pc_path,label_path)
+			ri = pc2ri_pw(ptcld,label)
 			
 			line = "%s_%s\n" % (seq, file)
 			file1.write(line) 
@@ -136,5 +185,5 @@ if __name__ == "__main__":
 			if 'q' == chr(c & 255):
 				print("finish")
 			"""
-			#np.save(save_name,ri)
+			np.save(save_name,ri)
 	file1.close()

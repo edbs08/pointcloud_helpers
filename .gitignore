@@ -4,4 +4,8 @@
 !.gitignore
 !pc2ri.py
 !generate_dataset.py
+!generate_dataset_2.py
+!generate_dataset_3.py
+!generate_dataset_4.py
+!generate_train_val_rand.py
 !visual_data.py

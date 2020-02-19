@@ -43,51 +43,106 @@ color_map = {
 259: [255, 0, 0],
 }
 
+small_color_map = {
+0 : [0, 0, 0],
+1 : [0, 0, 255],
+2: [245, 150, 100],
+3: [245, 230, 100],
+}
+
 use_color_map_SemanticKITTI = True
 
+def comprate_ruttine():
+	path_A = np.array(["/media/daniel/FILES/UB/Data/Generated_Datasets/All_labels/00_","/media/daniel/FILES/UB/Data/Generated_Datasets/All_labels/01_"])
+	img_color_A = np.zeros((64,512,3),dtype=np.uint8)
 
-for i in range(1):
-	###############
-	#name = "lidar_2d/2011_09_26_0001_%010d.npy" % i
-	#pc = np.load('lidar_2d/2011_09_26_0070_0000000336.npy')
-	#print(name)
-	###############
-	name = "Generated_Datasets/All_labels/00_000000.npy"
-	##############
+	path_B = np.array(["/home/daniel/Documents/LU_Net_Original/lidar_2d/2011_09_26_0001_","/home/daniel/Documents/LU_Net_Original/lidar_2d/2011_09_26_0020_"])
+	img_color_B = np.zeros((64,512,3),dtype=np.uint8)
 
-	
-	pc = np.load(name)
-	#print(pc.shape)
-	labels_ri = pc[:,:,5]
-	img_color = np.zeros((labels_ri.shape[0],labels_ri.shape[1],3),dtype=np.uint8)
-	if (use_color_map_SemanticKITTI == True):
-		for r in range (labels_ri.shape[0]):
-			for c in range (labels_ri.shape[1]):
-				img_color[r,c,:] =  color_map[labels_ri[r,c]]
+	for ii in range(2):
+		print(path_A[ii])
+		print(path_B[ii])
+		for i in range(50):
+			nameA = "%06d.npy" % i
+			nameA = path_A[ii]+nameA
+			pc = np.load(nameA)
+			labels_ri = pc[:,:,5]
+			for r in range (labels_ri.shape[0]):
+				for c in range (labels_ri.shape[1]):
+					#print(img_color_A[r,c,:])
+					#print(labels_ri[r,c])
+					#print(color_map[labels_ri[r,c]])
+					img_color_A[r,c,:] =  color_map[labels_ri[r,c]]
+
+
+
+			nameB = "%010d.npy" % i
+			nameB = path_B[ii]+nameB
+			pc = np.load(nameB)
+			labels_ri = pc[:,:,5]
+			for r in range (labels_ri.shape[0]):
+				for c in range (labels_ri.shape[1]):
+					#print (img_color_A[r,c,:])
+					#print(labels_ri[r,c])
+					#print(color_map[labels_ri[r,c]])
+					img_color_B[r,c,:] =  small_color_map[labels_ri[r,c]]
+
+			cv2.namedWindow("image Semantic KITTI")
+			cv2.imshow('image Semantic KITTI', img_color_A)
+
+
+			cv2.namedWindow("image SqueezeSeg")
+			cv2.imshow('image SqueezeSeg', img_color_B)
+			#cv2.imshow('image', rgb_img)
+			c = cv2.waitKey(0)
+			if 'q' == chr(c & 255):
+				#print("finish")
+				break
+
+
+def normal_display():
+	for i in range(1):
+		###############
+		#name = "lidar_2d/2011_09_26_0001_%010d.npy" % i
+		#pc = np.load('lidar_2d/2011_09_26_0070_0000000336.npy')
+		#print(name)
+		###############
+		name = "/media/daniel/FILES/UB/Data/Generated_Datasets/All_labels/00_000000.npy"
+		##############
+
 		
-	else:
-		img = pc[:,:,5]
-		img = img / np.amax(img)
-		img = 255*img
-		img = img.astype(np.uint8)
-		img_color = img_color.astype(np.uint8)
-		img_color[:,:,0] = img
-		img_color[:,:,1] = 255
-		img_color[:,:,2] = 255
-		img_color = cv2.cvtColor(img_color,cv2.COLOR_HSV2BGR)
-		img_color.astype(np.uint8)
-		
-	cv2.namedWindow("image")
-	cv2.imshow('image', img_color)
-	#cv2.imshow('image', rgb_img)
-	c = cv2.waitKey(0)
-	if 'q' == chr(c & 255):
-		print("finish")
-		#do nothing
+		pc = np.load(name)
+		#print(pc.shape)
+		labels_ri = pc[:,:,5]
+		img_color = np.zeros((labels_ri.shape[0],labels_ri.shape[1],3),dtype=np.uint8)
+		if (use_color_map_SemanticKITTI == True):
+			for r in range (labels_ri.shape[0]):
+				for c in range (labels_ri.shape[1]):
+					img_color[r,c,:] =  color_map[labels_ri[r,c]]
+			
+		else:
+			img = pc[:,:,5]
+			img = img / np.amax(img)
+			img = 255*img
+			img = img.astype(np.uint8)
+			img_color = img_color.astype(np.uint8)
+			img_color[:,:,0] = img
+			img_color[:,:,1] = 255
+			img_color[:,:,2] = 255
+			img_color = cv2.cvtColor(img_color,cv2.COLOR_HSV2BGR)
+			img_color.astype(np.uint8)
+			
+		cv2.namedWindow("image")
+		cv2.imshow('image', img_color)
+		#cv2.imshow('image', rgb_img)
+		c = cv2.waitKey(0)
+		if 'q' == chr(c & 255):
+			print("finish")
+			#do nothing
 
-	#count number of classes
-	print("******************** ")
-	print(np.amax(labels_ri))
+		#count number of classes
+		print("******************** ")
+		print(np.amax(labels_ri))
 
 def visual_data_function(range_img):
 
@@ -115,3 +170,7 @@ def visual_data_function(range_img):
 	if 'q' == chr(c & 255):
 		print("finish")
 	time.sleep(5)
+
+if __name__ == "__main__":
+	#normal_display()
+	comprate_ruttine()

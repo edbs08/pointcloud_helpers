@@ -37,12 +37,15 @@ def load_velodyne_binary_labels(velodyne_bin_path, labels_path):
 	label= label & 0xFFFF #Following SemanticKITTI example (laser_scan.py ln:247)
 	label = label.reshape(1,-1)
 
+	label cluster_labels(label)
+
 	#ptcld = np.array([[ptcld],[labels_path]])
 	#ptcld = np.concatenate((ptcld,label),axis = 0)
 	return ptcld,label
 
 def cluster_labels(label):
-	return
+	label()
+	return label
 
 
 
@@ -99,9 +102,6 @@ def pc2ri_pw(pc,label):
 
 if __name__ == "__main__":
 	save_path = "/home/daniel/Documents/Generated_Datasets/All_labels/"
-	file_name = save_path+"MyFile.txt"
-	file1 = open(file_name,"w")
-
 	max_num_sequence =  21
 	max_num_file = 10000
 	for s_index in range (max_num_sequence):
@@ -115,19 +115,15 @@ if __name__ == "__main__":
 			save_name = save_path + "%s_%s.npy" % (seq, file)
 
 			if not os.path.isfile(pc_path):
-				print("pc_path",pc_path)
+				print("pc_path",save_name)
 				break
 			if not os.path.isfile(label_path):
-				print("lb_path",label_path)
+				print("lb_path",save_name)
 				break
 
 			print("Starting processing sequence ", seq, " file " , file)
-			#ptcld,label = load_velodyne_binary_labels(pc_path,label_path)
-			#ri = pc2ri_pw(ptcld,label)
-			
-			line = "%s_%s\n" % (seq, file)
-			file1.write(line) 
-
+			ptcld,label = load_velodyne_binary_labels(pc_path,label_path)
+			ri = pc2ri_pw(ptcld,label)
 			"""
 			color_image = np.uint8(255*ri[:,:,4]/np.max(ri[:,:,4]))
 			color_image = cv2.applyColorMap(color_image, cv2.COLORMAP_JET)
@@ -136,5 +132,4 @@ if __name__ == "__main__":
 			if 'q' == chr(c & 255):
 				print("finish")
 			"""
-			#np.save(save_name,ri)
-	file1.close()
+			np.save(save_name,ri)
