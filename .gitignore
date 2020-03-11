@@ -9,3 +9,6 @@
 !generate_dataset_4.py
 !generate_train_val_rand.py
 !visual_data.py
+!generate_dataset_5.py
+!metrics_computation.py
+!visual_results_compare.py

@@ -6,9 +6,45 @@ import sys
 #np.set_printoptions(threshold=sys.maxsize)
 #pc = np.load('lidar_2d/2011_09_26_0001_0000000000.npy')
 #pc = np.load('lidar_2d/2011_09_26_0001_0000000001.npy')
+labels={
+  0 : "unlabeled",
+  1 : "outlier",
+  10: "car",
+  11: "bicycle",
+  13: "bus",
+  15: "motorcycle",
+  16: "on-rails",
+  18: "truck",
+  20: "other-vehicle",
+  30: "person",
+  31: "bicyclist",
+  32: "motorcyclist",
+  40: "road",
+  44: "parking",
+  48: "sidewalk",
+  49: "other-ground",
+  50: "building",
+  51: "fence",
+  52: "other-structure",
+  60: "lane-marking",
+  70: "vegetation",
+  71: "trunk",
+  72: "terrain",
+  80: "pole",
+  81: "traffic-sign",
+  99: "other-object",
+  252: "moving-car",
+  253: "moving-bicyclist",
+  254: "moving-person",
+  255: "moving-motorcyclist",
+  256: "moving-on-rails",
+  257: "moving-bus",
+  258: "moving-truck",
+  259: "moving-other-vehicle",
+  }
 color_map = {
-0 : [0, 0, 0],
-1 : [0, 0, 255],
+0 : [0,0,0],
+1 : [0, 0, 0],
 10: [245, 150, 100],
 11: [245, 230, 100],
 13: [250, 80, 100],
@@ -50,6 +86,28 @@ small_color_map = {
 3: [245, 230, 100],
 }
 
+learning_map_inv={ # inverse of previous map
+  0: 0,      # "unlabeled", and others ignored
+  1: 10,     # "car"
+  2: 11,     # "bicycle"
+  3: 15,     # "motorcycle"
+  4: 18,     # "truck"
+  5: 20,     # "other-vehicle"
+  6: 30,     # "person"
+  7: 31,     # "bicyclist"
+  8: 32,     # "motorcyclist"
+  9: 40,     # "road"
+  10: 44,    # "parking"
+  11: 48,    # "sidewalk"
+  12: 49,    # "other-ground"
+  13: 50,    # "building"
+  14: 51,    # "fence"
+  15: 70,    # "vegetation"
+  16: 71,    # "trunk"
+  17: 72,    # "terrain"
+  18: 80,    # "pole"
+  19: 81,    # "traffic-sign"
+}
 use_color_map_SemanticKITTI = True
 
 def comprate_ruttine():
@@ -96,9 +154,21 @@ def comprate_ruttine():
 			#cv2.imshow('image', rgb_img)
 			c = cv2.waitKey(0)
 			if 'q' == chr(c & 255):
+
 				#print("finish")
 				break
 
+def paint_single_class(actualClass,sclass):
+	color = [0,0,0]
+	for sclass_ in sclass:
+		if(actualClass == sclass_):
+			color = color_map[actualClass]
+	return color
+def get_inverse_label(pc):
+	for r in range (pc.shape[0]):
+		for c in range (pc.shape[1]):
+			pc[r,c,5] = learning_map_inv[pc[r,c,5]]
+	return pc
 
 def normal_display():
 	for i in range(1):
@@ -107,11 +177,15 @@ def normal_display():
 		#pc = np.load('lidar_2d/2011_09_26_0070_0000000336.npy')
 		#print(name)
 		###############
-		name = "/media/daniel/FILES/UB/Data/Generated_Datasets/All_labels/00_000000.npy"
+		name = "/media/daniel/FILES/UB/Data/Generated_Datasets/20200228/08_000000.npy"
+		learning_inv = True
+		#name = "/media/daniel/FILES/UB/Data/Generated_Datasets/All_labels/08_000000.npy"
 		##############
 
 		
 		pc = np.load(name)
+		if(learning_inv):
+			pc = get_inverse_label(pc)
 		#print(pc.shape)
 		labels_ri = pc[:,:,5]
 		img_color = np.zeros((labels_ri.shape[0],labels_ri.shape[1],3),dtype=np.uint8)
@@ -119,6 +193,8 @@ def normal_display():
 			for r in range (labels_ri.shape[0]):
 				for c in range (labels_ri.shape[1]):
 					img_color[r,c,:] =  color_map[labels_ri[r,c]]
+					sclass = [0,10]
+					#img_color[r,c,:] = paint_single_class(labels_ri[r,c],sclass)
 			
 		else:
 			img = pc[:,:,5]
@@ -172,5 +248,5 @@ def visual_data_function(range_img):
 	time.sleep(5)
 
 if __name__ == "__main__":
-	#normal_display()
-	comprate_ruttine()
+	normal_display()
+	#comprate_ruttine()
